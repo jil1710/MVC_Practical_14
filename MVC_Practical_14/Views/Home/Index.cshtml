@@ -1,0 +1,140 @@
+﻿@using PagedList.Mvc;
+@using PagedList;
+@model IPagedList<MVC_Practical_14.User>
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+@{
+    ViewBag.Title = "Index";
+}
+
+
+
+<div class="mb-3">
+    <p class="float-start">
+        @Html.ActionLink("Create New", "Create", string.Empty, htmlAttributes: new { @class = "btn btn-primary" })
+    </p>
+    <div class="float-end d-flex align-items-center">
+        @Html.TextBox("search", "", htmlAttributes: new { @placeholder = "Search By Name....", id = "search", @class = "form-control d-inline mx-3" })
+    </div>
+</div>
+
+<table class="table table-borderless table-hover rounded-3" style="border-radius:10px !important;">
+    <thead>
+        <tr class="text-center table-dark">
+            <th>
+                @Html.DisplayNameFor(model => model.First().Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.First().DOB)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.First().Age)
+            </th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="tbody">
+        @if (Model.Count() == 0)
+        {
+            <tr class="bg-danger text-center">
+                <td colspan="4">Opps! Nothing to show!</td>
+            </tr>
+        }
+        @foreach (var item in Model)
+        {
+            <tr class="text-center">
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.DOB)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Age)
+                </td>
+                <td>
+                    @Html.ActionLink("Edit", "Edit", new { id = item.Id }, htmlAttributes: new { @class = "btn btn-success" })
+                    @Html.ActionLink("Details", "Details", new { id = item.Id }, htmlAttributes: new { @class = "btn btn-primary" })
+                    <button type="button" data-id="@item.Id" class="btn btn-danger Delete-Item">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+
+
+</table>
+@Html.PagedListPager(Model, id => Url.Action("Index", "Home", new { id }))
+
+@section scripts{
+    <script>
+        $(document).ready(function () {
+
+            // Delete Functionality
+            $(document).on("click",".Delete-Item",function () {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't delete this record?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+
+                    if (result.isConfirmed) {
+
+                        $.ajax({
+                            url: "@Url.Content("~/Home/Delete")",
+                            method: "POST",
+                            data: { id: $(this).data("id") },
+                            success: function (data) {
+                                if (data) {
+                                    Swal.fire(
+                                        'Deleted!',
+                                        'Your record has been deleted.',
+                                        'success'
+                                    )
+                                    location.reload();
+                                }
+                            },
+                            error: function (err) {
+                                Swal.fire(
+                                    'Opps!',
+                                    'Something went wrong!',
+                                    'error'
+                                )
+                            }
+
+                        })
+
+                    }
+                })
+            })
+
+            // Search Functionality
+            $("#search").keyup(function (e) {
+
+            var url = "@Url.Content("~/Home/Search")";
+            $.ajax({
+                url,
+                method: "POST",
+                data: {search: e.target.value },
+                success: (data) => {
+                    $("#tbody").empty();
+                    $.each(data, (index, d) => {
+                        $("#tbody").append(`<tr class="text-center"><td>${d.Name}</td><td>${new Date(parseInt(d.DOB.replace('/Date(', ''))).toLocaleDateString()}</td><td>${d.Age}</td><td>
+
+                            <a class="btn btn-success me-1" href="Home/Edit/${d.Id}">Edit</a><a class="btn btn-primary" href="/Home/Details/${d.Id}">Details</a>
+                            <button type="button" data-id="${d.Id}" class="btn btn-danger Delete-Item">Delete</button>
+                        </td></tr>`)
+                    })
+                },
+                error: () => {
+                    console.log(err);
+                }
+            });
+        })
+        })
+
+    </script>
+}
